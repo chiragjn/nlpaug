@@ -4,27 +4,28 @@
 
 import string
 
-from nlpaug.augmenter.word import WordAugmenter
 import nlpaug.model.lang_models as nml
+from nlpaug.augmenter.word import WordAugmenter
 from nlpaug.util.action import Action
 
-BERT_MODEL = {}
-XLNET_MODEL = {}
+BERT_MODEL = {}  # Multiple bert models can be loaded
+XLNET_MODEL = None
 
 
 def init_bert_model(model_path, device, force_reload=False, temperature=1.0, top_k=None, top_p=None):
     # Load model once at runtime
 
     global BERT_MODEL
-    if BERT_MODEL and not force_reload:
-        BERT_MODEL.temperature = temperature
-        BERT_MODEL.top_k = top_k
-        BERT_MODEL.top_p = top_p
-        return BERT_MODEL
+    loaded_bert_model = BERT_MODEL.get(model_path)
+    if loaded_bert_model and not force_reload:
+        loaded_bert_model.temperature = temperature
+        loaded_bert_model.top_k = top_k
+        loaded_bert_model.top_p = top_p
+        return loaded_bert_model
 
     bert_model = nml.Bert(model_path, device=device, temperature=temperature, top_k=top_k, top_p=top_p)
     bert_model.model.eval()
-    BERT_MODEL = bert_model
+    BERT_MODEL[model_path] = bert_model
 
     return bert_model
 
@@ -211,7 +212,7 @@ class ContextualWordEmbsAug(WordAugmenter):
             # https://github.com/makcedward/nlpaug/pull/51
             retry_cnt = 3
             for _ in range(retry_cnt):
-                candidates = self.model.predict(masked_text, target_word=original_word, n=1+_)
+                candidates = self.model.predict(masked_text, target_word=original_word, n=1 + _)
                 if len(candidates) > 0:
                     substitute_word, prob = self.sample(candidates, 1)[0]
                     break

@@ -6,8 +6,8 @@ from nlpaug.augmenter.sentence import SentenceAugmenter
 import nlpaug.model.lang_models as nml
 from nlpaug.util.action import Action
 
-XLNET_MODEL = {}
-GPT2_MODEL = {}
+XLNET_MODEL = None
+GPT2_MODEL = {}  # Multiple GPT2 models can be loaded
 
 
 def init_xlnet_model(model_path, device, force_reload=False, temperature=1.0, top_k=None, top_p=None):
@@ -29,15 +29,16 @@ def init_xlnet_model(model_path, device, force_reload=False, temperature=1.0, to
 def init_gpt2_model(model_path, device, force_reload=False, temperature=1.0, top_k=None, top_p=None):
     # Load model once at runtime
     global GPT2_MODEL
-    if GPT2_MODEL and not force_reload:
-        GPT2_MODEL.temperature = temperature
-        GPT2_MODEL.top_k = top_k
-        GPT2_MODEL.top_p = top_p
-        return GPT2_MODEL
+    loaded_gpt2_model = GPT2_MODEL.get(model_path)
+    if loaded_gpt2_model and not force_reload:
+        loaded_gpt2_model.temperature = temperature
+        loaded_gpt2_model.top_k = top_k
+        loaded_gpt2_model.top_p = top_p
+        return loaded_gpt2_model
 
     gpt2_model = nml.Gpt2(model_path, device=device, temperature=temperature, top_k=top_k, top_p=top_p)
     gpt2_model.model.eval()
-    GPT2_MODEL = gpt2_model
+    GPT2_MODEL[model_path] = gpt2_model
 
     return gpt2_model
 
