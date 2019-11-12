@@ -73,9 +73,11 @@ class Bert(LanguageModels):
     def __init__(self, model_path='bert-base-uncased', temperature=1.0, top_k=None, top_p=None, device='cuda'):
         super().__init__(device, temperature=temperature, top_k=top_k, top_p=top_p)
         self.model_path = model_path
+        self.distilled_version = False
 
         if 'distil' in model_path:
             # Supported value is 'distilbert-base-uncased'
+            self.distilled_version = True
             self.tokenizer = DistilBertTokenizer.from_pretrained(model_path)
             self.model = DistilBertForMaskedLM.from_pretrained(model_path)
         else:
@@ -111,7 +113,10 @@ class Bert(LanguageModels):
 
         # Prediction
         with torch.no_grad():
-            outputs = self.model(token_inputs, segment_inputs, mask_inputs)
+            if self.distilled_version:
+                outputs = self.model(input_ids=token_inputs, attention_mask=mask_inputs)
+            else:
+                outputs = self.model(input_ids=token_inputs, token_type_ids=segment_inputs, attention_mask=mask_inputs)
         target_token_logits = outputs[0][0][target_pos]
 
         # Selection
