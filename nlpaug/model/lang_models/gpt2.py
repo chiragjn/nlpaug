@@ -40,11 +40,14 @@ class Gpt2(LanguageModels):
         target_token_logits = outputs[0][0][-1]  # GPT2 only predict last token
 
         # Selection
-        seed = {'temperature': self.temperature, 'top_k': self.top_k, 'top_p': self.top_p}
-        target_token_logits = self.control_randomness(target_token_logits, seed)
-        target_token_logits, target_token_idxes = self.filtering(target_token_logits, seed)
+        # Greedy, only for benchmarking purposes
+        mx = torch.argmax(target_token_logits).item()
+        results = [(self.id2token(mx), -1)]
+        # seed = {'temperature': self.temperature, 'top_k': self.top_k, 'top_p': self.top_p}
+        # target_token_logits = self.control_randomness(target_token_logits, seed)
+        # target_token_logits, target_token_idxes = self.filtering(target_token_logits, seed)
+        # results = self.pick(target_token_logits, target_word=target_word, n=n)
 
-        results = self.pick(target_token_logits, target_word=target_word, n=n)
         if self.return_past:
             past = outputs[1]
             results = (results, past,)
