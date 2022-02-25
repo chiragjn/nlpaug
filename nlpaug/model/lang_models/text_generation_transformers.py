@@ -60,6 +60,6 @@ class TextGenTransformers(LanguageModels):
                     num_workers=1
                 )
                 if isinstance(predict_result, list):
-                    results.extend([y for x in predict_result for y in x])
+                    results.extend([r['generated_text'] for r in predict_result])
 
-        return [r['generated_text'] for r in results]
+        return results
